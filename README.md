@@ -95,6 +95,25 @@ On startup, the bot connects to PostgreSQL and creates required tables if missin
 - `/setting voter <count>` - Set minimum voters (`1-500`).
 - `/setting mini_voters <count>` - Alias for `voter`.
 
+## Storage Backends
+
+Two storage backends are available and selected with `[database] driver` in
+`conf_dir/.secrets.toml`:
+
+- `postgres` (default) - PostgreSQL via `asyncpg`, recommended for larger or
+  multi-instance deployments.
+- `sqlite` - a local SQLite file via `aiosqlite`, no database server required.
+
+```toml
+[database]
+driver = "sqlite"
+path = "data/approvebypoll.db"
+```
+
+With `driver = "sqlite"` the rest of the `[database]` section (host/port/...)
+is ignored, the database file and its parent directory are created
+automatically, and the same group settings / join request flows work unchanged.
+
 ## Docker
 
 ### Build image

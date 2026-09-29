@@ -6,7 +6,7 @@ from loguru import logger
 
 from app.controller import BotRunner
 from app_conf import settings
-from utils.postgres import BotDatabase
+from utils.storage import BotDatabase
 
 load_dotenv()
 # 移除默认的日志处理器
