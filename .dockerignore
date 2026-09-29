@@ -10,6 +10,7 @@ __pycache__
 *.log
 tests
 run.log
+data
 LICENSE
 pm2.json
 database_setup.sql

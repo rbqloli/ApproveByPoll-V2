@@ -114,6 +114,13 @@ With `driver = "sqlite"` the rest of the `[database]` section (host/port/...)
 is ignored, the database file and its parent directory are created
 automatically, and the same group settings / join request flows work unchanged.
 
+With Docker, use the dedicated Compose file, which drops the PostgreSQL
+service and persists the SQLite file in `./data`:
+
+```bash
+docker compose -f docker-compose.sqlite.yml up -d --build
+```
+
 ## Docker
 
 ### Build image
