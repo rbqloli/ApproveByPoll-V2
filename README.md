@@ -4,7 +4,7 @@ A Telegram bot that manages group join requests with voting workflows.
 
 ## Highlights
 
-- Vote-based join approval with timeout, minimum-voter threshold, and admin override actions.
+- Vote-based join approval with timeout, minimum-voter threshold, and admin override actions. Vote duration is fully customizable from `30s` up to `7d`.
 - Two voting modes:
   - Normal Telegram poll mode.
   - Advanced button mode (Yes/No + live result query).
@@ -91,7 +91,7 @@ On startup, the bot connects to PostgreSQL and creates required tables if missin
 
 - `/help` - Show help information.
 - `/setting` - Open group settings panel.
-- `/setting time <seconds|10m30s>` - Set vote duration (`30-3600` seconds).
+- `/setting time <seconds|10m30s|2h|1d>` - Set vote duration (`30-604800` seconds, max `7d`). Time units `s`, `m`, `h`, `d` are supported.
 - `/setting voter <count>` - Set minimum voters (`1-500`).
 - `/setting mini_voters <count>` - Alias for `voter`.
 

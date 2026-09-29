@@ -77,7 +77,7 @@ class AsyncPostgresDB:
                     CREATE TABLE IF NOT EXISTS setting (
                         group_id BIGINT PRIMARY KEY,
                         vote_to_join BOOLEAN NOT NULL DEFAULT TRUE,
-                        vote_time INTEGER NOT NULL DEFAULT 600 CHECK (vote_time BETWEEN 30 AND 3600),
+                        vote_time INTEGER NOT NULL DEFAULT 600 CHECK (vote_time BETWEEN 30 AND 604800),
                         pin_msg BOOLEAN NOT NULL DEFAULT FALSE,
                         clean_pinned_message BOOLEAN NOT NULL DEFAULT FALSE,
                         anonymous_vote BOOLEAN NOT NULL DEFAULT TRUE,
@@ -86,6 +86,16 @@ class AsyncPostgresDB:
                         mini_voters INTEGER NOT NULL DEFAULT 3 CHECK (mini_voters BETWEEN 1 AND 500)
                     )
                 """)
+
+                # Widen the legacy vote_time constraint (30-3600) on existing databases
+                # so longer custom vote durations (up to 7 days) are accepted.
+                await connection.execute(
+                    "ALTER TABLE setting DROP CONSTRAINT IF EXISTS setting_vote_time_check"
+                )
+                await connection.execute(
+                    "ALTER TABLE setting ADD CONSTRAINT setting_vote_time_check "
+                    "CHECK (vote_time BETWEEN 30 AND 604800)"
+                )
 
                 # Create join_request table if it doesn't exist
                 await connection.execute("""

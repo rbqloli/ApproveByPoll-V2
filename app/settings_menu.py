@@ -12,7 +12,22 @@ TOGGLE_ITEMS = [
     "clean_pinned_message",
     "advanced_vote",
 ]
-VOTE_TIME_OPTIONS = [60, 120, 300, 600, 900, 1200, 1800, 2700, 3600]
+VOTE_TIME_MIN = 30
+VOTE_TIME_MAX = 604800  # 7 days
+VOTE_TIME_OPTIONS = [
+    60,
+    120,
+    300,
+    600,
+    1800,
+    3600,
+    7200,
+    21600,
+    43200,
+    86400,
+    259200,
+    604800,
+]
 MINI_VOTERS_OPTIONS = [1, 2, 3, 5, 10, 20, 50, 100, 200]
 
 
@@ -61,18 +76,20 @@ async def _bot_can_pin_messages(bot, chat_id: int) -> bool:
 
 def _format_vote_time(language: str, seconds: int) -> str:
     seconds = max(int(seconds), 0)
-    minutes = seconds // 60
-    remain_seconds = seconds % 60
-    if minutes and remain_seconds:
-        return t(
-            language,
-            "setting_vote_duration_min_sec",
-            minutes=minutes,
-            seconds=remain_seconds,
-        )
+    days, remainder = divmod(seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, secs = divmod(remainder, 60)
+
+    parts: list[str] = []
+    if days:
+        parts.append(f"{days} {t(language, 'setting_vote_unit_days')}")
+    if hours:
+        parts.append(f"{hours} {t(language, 'setting_vote_unit_hours')}")
     if minutes:
-        return t(language, "setting_vote_duration_minutes", minutes=minutes)
-    return t(language, "setting_vote_duration_seconds", seconds=remain_seconds)
+        parts.append(f"{minutes} {t(language, 'setting_vote_unit_minutes')}")
+    if secs or not parts:
+        parts.append(f"{secs} {t(language, 'setting_vote_unit_seconds')}")
+    return " ".join(parts)
 
 
 def _parse_int(value: str) -> int | None:
@@ -88,18 +105,15 @@ def _parse_time_seconds(value: str) -> int | None:
         return direct_int
 
     normalized = value.strip().lower()
-    match = re.fullmatch(r"(?:(\d+)m)?(?:(\d+)s)?", normalized)
-    if not match:
+    match = re.fullmatch(r"(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?", normalized)
+    if not match or not any(match.groups()):
         return None
 
-    minute_part = match.group(1)
-    second_part = match.group(2)
-    if minute_part is None and second_part is None:
-        return None
-
-    minutes = int(minute_part) if minute_part is not None else 0
-    seconds = int(second_part) if second_part is not None else 0
-    return minutes * 60 + seconds
+    days = int(match.group(1)) if match.group(1) is not None else 0
+    hours = int(match.group(2)) if match.group(2) is not None else 0
+    minutes = int(match.group(3)) if match.group(3) is not None else 0
+    seconds = int(match.group(4)) if match.group(4) is not None else 0
+    return days * 86400 + hours * 3600 + minutes * 60 + seconds
 
 
 async def _handle_setting_command_with_args(
@@ -131,7 +145,7 @@ async def _handle_setting_command_with_args(
         if parsed_value is None:
             await bot.reply_to(message, t(language, "setting_invalid_integer"))
             return True
-        if not 30 <= parsed_value <= 3600:
+        if not VOTE_TIME_MIN <= parsed_value <= VOTE_TIME_MAX:
             await bot.reply_to(message, t(language, "setting_time_out_of_range"))
             return True
         await BotDatabase.update_group_setting(
@@ -251,8 +265,7 @@ def build_vote_time_keyboard(group_settings: dict) -> types.InlineKeyboardMarkup
 
     buttons = []
     for option in VOTE_TIME_OPTIONS:
-        minutes = option // 60
-        label = f"{minutes}min"
+        label = _format_vote_time(language, option)
         if option == current_vote_time:
             label = f"✅ {label}"
         buttons.append(
